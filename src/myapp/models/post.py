@@ -1,6 +1,6 @@
 from abc import ABC
 from datetime import datetime
-from users import Author
+from myapp.models.users import Author
 
 class Category:
 	def __init__(self, category_id: int, name: str):
