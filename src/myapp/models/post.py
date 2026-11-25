@@ -70,11 +70,11 @@ class Question(Post):
 	@property
 	def title(self) -> str:
 		return self._title
-	
+
 	@property
 	def category(self) -> Category:
 		return self._category
-	
+
 	@property
 	def tags(self) -> list[Tag]:
 		return list(self._tags)
@@ -92,21 +92,15 @@ class Question(Post):
 	def answers(self) -> list:
 		return list(self._answers)
 
-	def add_answer(self, answer) -> None:
+	def add_answer(self, answer: Answer) -> None:
 		if not isinstance(answer, Answer):
 			raise ValueError("El elemento debe ser una instancia válida de Answer")
+
+		if answer.question is not self:
+			raise ValueError("La respuesta pertenece a otra pregunta.")
+
 		if answer not in self._answers:
 			self._answers.append(answer)
-
-	def add_answer(self, answer: Answer) -> None:
-    if not isinstance(answer, Answer):
-        raise ValueError("El elemento debe ser una instancia válida de Answer")
-
-    if answer.question is not self:
-        raise ValueError("La respuesta pertenece a otra pregunta.")
-
-    if answer not in self._answers:
-        self._answers.append(answer)
 
 class Answer(Post):
     _id_counter = count(1)  # compartido por todas las respuestas
