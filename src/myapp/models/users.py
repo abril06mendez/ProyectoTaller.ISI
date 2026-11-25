@@ -64,7 +64,7 @@ class User(Author):
 
 	def create_answer(self, question, text: str):
 		from myapp.models.post import Answer
-		return Answer(text, self)
+		return Answer(text, self, question)
 
 class UserManager:
 	def __init__(self):
