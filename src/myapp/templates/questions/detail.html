@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ question.title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ question.title }}</h1>
+  <p class="meta">Categoría: {{ question.category.name }} · Por {{ question.author.name }}</p>
+  <p>{{ question.body }}</p>
+  {% for tag in question.tags %}
+    <span class="tag">{{ tag.name }}</span>
+  {% endfor %}
+</div>
+
+<div class="card ai-card">
+  <h3>Consultar a la IA (comparar modelos)</h3>
+  <form method="post" action="{{ url_for('questions.generate_ai_answer', question_id=question.id) }}">
+    <select name="model_name">
+      <option value="gemini">Gemini</option>
+      <option value="openai">OpenAI</option>
+      <option value="claude">Claude</option>
+    </select>
+    <button type="submit" class="secondary">Generar respuesta con IA</button>
+  </form>
+</div>
+
+<h3>Respuestas ({{ question.answers|length }})</h3>
+{% for ans in question.answers %}
+  <div class="card {% if ans.is_ai_generated %}ai-card{% endif %} {% if ans.is_accepted %}accepted{% endif %}">
+    <p class="meta">
+      {% if ans.is_ai_generated %}
+        <strong>{{ ans.ai_agent_name }}</strong>
+      {% else %}
+        <strong>{{ ans.author.name }}</strong> ({{ ans.author.role }})
+      {% endif %}
+      {% if ans.is_accepted %} · <strong>✓ Aceptada</strong>{% endif %}
+    </p>
+    <p style="white-space: pre-wrap;">{{ ans.body }}</p>
+
+    {% if session.get('user_id') == question.author_id %}
+      <form method="post" action="{{ url_for('questions.toggle_accept', question_id=question.id, answer_id=ans.id) }}">
+        <button type="submit">{{ 'Quitar aceptación' if ans.is_accepted else 'Aceptar respuesta' }}</button>
+      </form>
+    {% endif %}
+  </div>
+{% else %}
+  <p>Aún no hay respuestas.</p>
+{% endfor %}
+
+{% if session.get('user_id') %}
+<div class="card">
+  <h3>Tu respuesta</h3>
+  <form method="post" action="{{ url_for('questions.add_answer', question_id=question.id) }}">
+    <textarea name="body" rows="3" placeholder="Escribí tu respuesta..." required></textarea>
+    <button type="submit">Responder</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

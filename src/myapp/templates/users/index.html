@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<h1>Usuarios registrados</h1>
+{% for user in users %}
+  <div class="card">
+    <a href="{{ url_for('users.detail', user_id=user.id) }}"><strong>{{ user.name }}</strong></a>
+    <span class="meta"> — {{ user.email }} ({{ user.role }})</span>
+  </div>
+{% else %}
+  <p>Todavía no hay usuarios registrados.</p>
+{% endfor %}
+{% endblock %}

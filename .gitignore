@@ -2,3 +2,7 @@
 instance/
 __pycache__/
 *.py[cod]
+
+.env
+__pycache__/
+*.pyc

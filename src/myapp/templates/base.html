@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ProyectoTaller ISI{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <nav>
+    <a href="{{ url_for('questions.index') }}">Preguntas</a>
+    <a href="{{ url_for('users.index') }}">Usuarios</a>
+    <div class="right">
+      {% if session.get('user_id') %}
+        <span class="meta">{{ session.get('user_name') }} ({{ session.get('user_role') }})</span>
+        <a href="{{ url_for('auth.logout') }}">Salir</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">Ingresar</a>
+        <a href="{{ url_for('auth.register') }}">Registrarse</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

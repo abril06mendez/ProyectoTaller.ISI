@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Preguntas{% endblock %}
+{% block content %}
+<h1>Preguntas y Respuestas</h1>
+
+{% if session.get('user_id') %}
+<div class="card">
+  <h3>Hacer una pregunta</h3>
+  <form method="post">
+    <input type="text" name="title" placeholder="Título de la pregunta" required>
+    <input type="text" name="category" placeholder="Categoría (ej. Arquitectura, Python)" required>
+    <input type="text" name="tags" placeholder="Etiquetas separadas por coma (ej. #ia-help, flask)">
+    <textarea name="body" rows="3" placeholder="Describí tu duda..." required></textarea>
+    <button type="submit">Publicar pregunta</button>
+  </form>
+</div>
+{% else %}
+<p class="meta"><a href="{{ url_for('auth.login') }}">Iniciá sesión</a> para publicar preguntas.</p>
+{% endif %}
+
+{% for q in questions %}
+  <div class="card">
+    <a href="{{ url_for('questions.detail', question_id=q.id) }}"><strong>{{ q.title }}</strong></a>
+    <p class="meta">
+      Categoría: {{ q.category.name }} · Por {{ q.author.name }} ({{ q.author.role }}) · {{ q.answers|length }} respuestas
+    </p>
+    {% for tag in q.tags %}
+      <span class="tag">{{ tag.name }}</span>
+    {% endfor %}
+  </div>
+{% else %}
+  <p>Todavía no hay preguntas publicadas.</p>
+{% endfor %}
+{% endblock %}

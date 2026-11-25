@@ -30,7 +30,7 @@ def _build_prompt(question: Question) -> str:
         f"Pregunta: {question.body}"
     )
 class GeminiStrategy(AIStrategy): 
-    def __init__(self, model: str = "gemini-2.5-flash") -> None:
+    def __init__(self, model: str = "gemini-3.8-flash") -> None:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise AIModelError("No se pudo inicializar Geminin:falta GEMINI_API_KEY")
