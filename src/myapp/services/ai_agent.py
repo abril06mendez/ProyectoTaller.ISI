@@ -64,7 +64,7 @@ class AIAgent(Author):
             raise ValueError("El parámetro 'question' debe ser una instancia válida de Question.")
         if not text or not text.strip():
             raise ValueError("El texto de la respuesta no puede estar vacío.")
-        return Answer(text, self)
+        return Answer(text, self, question)
 
     def _get_question_answer(self, question: Question) -> list[Any]:
         if hasattr(question, "answers"):

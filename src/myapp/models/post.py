@@ -21,7 +21,7 @@ class Tag:
 
 class Post(ABC):
 	def __init__(self, post_id: int, body: str, author: Author):
-		if not body.strip():
+		if not isinstance(body, str) or not body.strip():
 			raise ValueError("El cuerpo de la publicacion no puede estar en blanco.")
 
 		if not isinstance(author,Author):
@@ -48,6 +48,7 @@ class Post(ABC):
 	def created_at(self) -> datetime:
 		return self._created_at
 	
+
 class Question(Post):
 	def __init__(self, post_id: int, title: str, body: str, category: Category, author: Author, tags: list[Tag] = None):
 		if not title or not title.strip():
@@ -102,10 +103,31 @@ class Question(Post):
 		if answer not in self._answers:
 			self._answers.append(answer)
 
+	def accept_answer(self, answer: Answer, user: Author) -> None:
+		if user is not self.author:
+			raise PermissionError("Solo el autor de la pregunta puede aceptar respuestas.")
+
+		if not isinstance(answer, Answer) or answer.question is not self:
+			raise ValueError("La respuesta no pertenece a esta pregunta.")
+
+		answer.mark_as_accepted()
+
+	def unaccept_answer(self, answer: Answer, user: Author) -> None:
+		if user is not self.author:
+			raise PermissionError("Solo el autor de la pregunta puede quitar la aceptación.")
+
+		if not isinstance(answer, Answer) or answer.question is not self:
+			raise ValueError("La respuesta no pertenece a esta pregunta.")
+
+		answer.unmark_as_accepted()
+
 class Answer(Post):
-    _id_counter = count(1)  # compartido por todas las respuestas
+    _id_counter = count(1)
 
     def __init__(self, body: str, author: Author, question: Question):
+        if not isinstance(question, Question):
+            raise ValueError("La respuesta debe pertenecer a una pregunta válida.")
+
         super().__init__(next(Answer._id_counter), body, author)
         self._question = question
         self._is_accepted = False
