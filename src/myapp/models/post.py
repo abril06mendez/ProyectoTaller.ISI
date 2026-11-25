@@ -1,6 +1,7 @@
 from abc import ABC
 from datetime import datetime
 from myapp.models.users import Author
+from itertools import count
 
 class Category:
 	def __init__(self, category_id: int, name: str):
@@ -20,7 +21,7 @@ class Tag:
 
 class Post(ABC):
 	def __init__(self, post_id: int, body: str, author: Author):
-		if not body.strip():
+		if not isinstance(body, str) or not body.strip():
 			raise ValueError("El cuerpo de la publicacion no puede estar en blanco.")
 
 		if not isinstance(author,Author):
@@ -47,6 +48,7 @@ class Post(ABC):
 	def created_at(self) -> datetime:
 		return self._created_at
 	
+
 class Question(Post):
 	def __init__(self, post_id: int, title: str, body: str, category: Category, author: Author, tags: list[Tag] = None):
 		if not title or not title.strip():
@@ -69,11 +71,11 @@ class Question(Post):
 	@property
 	def title(self) -> str:
 		return self._title
-	
+
 	@property
 	def category(self) -> Category:
 		return self._category
-	
+
 	@property
 	def tags(self) -> list[Tag]:
 		return list(self._tags)
@@ -86,3 +88,64 @@ class Question(Post):
 
 	def has_tag(self, tag_name: str) -> bool:
 		return any(tag.name.lower() == tag_name.strip().lower() for tag in self._tags)
+
+	@property
+	def answers(self) -> list:
+		return list(self._answers)
+
+	def add_answer(self, answer: Answer) -> None:
+		if not isinstance(answer, Answer):
+			raise ValueError("El elemento debe ser una instancia válida de Answer")
+
+		if answer.question is not self:
+			raise ValueError("La respuesta pertenece a otra pregunta.")
+
+		if answer not in self._answers:
+			self._answers.append(answer)
+
+	def accept_answer(self, answer: Answer, user: Author) -> None:
+		if user is not self.author:
+			raise PermissionError("Solo el autor de la pregunta puede aceptar respuestas.")
+
+		if not isinstance(answer, Answer) or answer.question is not self:
+			raise ValueError("La respuesta no pertenece a esta pregunta.")
+
+		answer.mark_as_accepted()
+
+	def unaccept_answer(self, answer: Answer, user: Author) -> None:
+		if user is not self.author:
+			raise PermissionError("Solo el autor de la pregunta puede quitar la aceptación.")
+
+		if not isinstance(answer, Answer) or answer.question is not self:
+			raise ValueError("La respuesta no pertenece a esta pregunta.")
+
+		answer.unmark_as_accepted()
+
+class Answer(Post):
+    _id_counter = count(1)
+
+    def __init__(self, body: str, author: Author, question: Question):
+        if not isinstance(question, Question):
+            raise ValueError("La respuesta debe pertenecer a una pregunta válida.")
+
+        super().__init__(next(Answer._id_counter), body, author)
+        self._question = question
+        self._is_accepted = False
+
+    @property
+    def question(self) -> Question:
+        return self._question
+
+    @property
+    def is_accepted(self) -> bool:
+        return self._is_accepted
+
+    def mark_as_accepted(self) -> None:
+        self._is_accepted = True
+
+    def unmark_as_accepted(self) -> None:
+        self._is_accepted = False
+
+    def __repr__(self) -> str:
+        status = "accepted" if self._is_accepted else "pending"
+        return f"Answer(id={self.id}, author={self.author.name}, {status})"

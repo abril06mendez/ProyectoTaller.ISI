@@ -1,5 +1,4 @@
 from datetime import timedelta
-from types import SimpleNamespace
 
 import pytest
 
@@ -54,16 +53,10 @@ def test_set_strategy_updates_strategy_and_model(sample_question):
     assert agent.strategy is new_strategy
     assert agent.active_model == "new_model"
 
-def test_process_question_responds_once_and_prevents_duplicates(sample_question, monkeypatch):
+def test_process_question_responds_once_and_prevents_duplicates(sample_question):
     category, student, agent = sample_question
     tag = Tag(1, "#ia-help")
     question = Question(4, "Duda Git", "Cómo hago un projects?", category, student, tags=[tag])
-
-    monkeypatch.setattr(
-        agent,
-        "create_answer",
-        lambda q, text: SimpleNamespace(question=q, body=text, author=agent),
-    )
 
     first_answer = agent.process_question(question)
     second_answer = agent.process_question(question)
@@ -71,7 +64,7 @@ def test_process_question_responds_once_and_prevents_duplicates(sample_question,
     assert first_answer is not None
     assert first_answer.author is agent
     assert "Duda Git" in first_answer.body
-    assert len(question._answers) == 1
+    assert len(question.answers) == 1
     assert second_answer is None
 
 
