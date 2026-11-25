@@ -98,32 +98,38 @@ class Question(Post):
 		if answer not in self._answers:
 			self._answers.append(answer)
 
-	def accept_answer(self, answer, requester: Author) -> None:
-		if requester is not self.author:
-			raise PermissionError("Solo el autor de la pregunta puede aceptar una respuesta.")
-		if answer not in self._answers:
-			raise ValueError("La respuesta no pertenece a esta pregunta.")
-		for a in self._answers:
-			a.unmark_as_accepted()
-		answer.mark_as_accepted() 
+	def add_answer(self, answer: Answer) -> None:
+    if not isinstance(answer, Answer):
+        raise ValueError("El elemento debe ser una instancia válida de Answer")
+
+    if answer.question is not self:
+        raise ValueError("La respuesta pertenece a otra pregunta.")
+
+    if answer not in self._answers:
+        self._answers.append(answer)
 
 class Answer(Post):
-	_id_counter = count(1)  # compartido por todas las respuestas
+    _id_counter = count(1)  # compartido por todas las respuestas
 
-	def __init__(self, body: str, author: Author):
-		super().__init__(next(Answer._id_counter), body, author)
-		self._is_accepted = False
+    def __init__(self, body: str, author: Author, question: Question):
+        super().__init__(next(Answer._id_counter), body, author)
+        self._question = question
+        self._is_accepted = False
 
-	@property
-	def is_accepted(self) -> bool:
-		return self._is_accepted
+    @property
+    def question(self) -> Question:
+        return self._question
 
-	def mark_as_accepted(self) -> None:
-		self._is_accepted = True
+    @property
+    def is_accepted(self) -> bool:
+        return self._is_accepted
 
-	def unmark_as_accepted(self) -> None:
-		self._is_accepted = False
+    def mark_as_accepted(self) -> None:
+        self._is_accepted = True
 
-	def __repr__(self) -> str:
-		status = "accepted" if self._is_accepted else "pending"
-		return f"Answer(id={self.id}, author={self.author.name}, {status})"
+    def unmark_as_accepted(self) -> None:
+        self._is_accepted = False
+
+    def __repr__(self) -> str:
+        status = "accepted" if self._is_accepted else "pending"
+        return f"Answer(id={self.id}, author={self.author.name}, {status})"
