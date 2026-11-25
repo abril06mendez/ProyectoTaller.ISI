@@ -1,6 +1,5 @@
 from abc import ABC
 from datetime import datetime
-from myapp.models.post import Answer
 from myapp.models.users import Author
 from itertools import count
 
