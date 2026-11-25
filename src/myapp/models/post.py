@@ -1,6 +1,7 @@
 from abc import ABC
 from datetime import datetime
 from myapp.models.users import Author
+from itertools import count
 
 class Category:
 	def __init__(self, category_id: int, name: str):
@@ -86,3 +87,24 @@ class Question(Post):
 
 	def has_tag(self, tag_name: str) -> bool:
 		return any(tag.name.lower() == tag_name.strip().lower() for tag in self._tags)
+
+class Answer(Post):
+	_id_counter = count(1)  # compartido por todas las respuestas
+
+	def __init__(self, body: str, author: Author):
+		super().__init__(next(Answer._id_counter), body, author)
+		self._is_accepted = False
+
+	@property
+	def is_accepted(self) -> bool:
+		return self._is_accepted
+
+	def mark_as_accepted(self) -> None:
+		self._is_accepted = True
+
+	def unmark_as_accepted(self) -> None:
+		self._is_accepted = False
+
+	def __repr__(self) -> str:
+		status = "accepted" if self._is_accepted else "pending"
+		return f"Answer(id={self.id}, author={self.author.name}, {status})"
