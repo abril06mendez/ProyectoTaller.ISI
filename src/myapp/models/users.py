@@ -63,8 +63,8 @@ class User(Author):
 		return self._password_hash == self._hash_password(password)
 
 	def create_answer(self, question, text: str):
-		#firma para el issue #3
-		pass
+		from myapp.models.post import Answer
+		return Answer(text, self)
 
 class UserManager:
 	def __init__(self):
