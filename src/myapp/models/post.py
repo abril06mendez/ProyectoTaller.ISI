@@ -88,6 +88,25 @@ class Question(Post):
 	def has_tag(self, tag_name: str) -> bool:
 		return any(tag.name.lower() == tag_name.strip().lower() for tag in self._tags)
 
+	@property
+	def answers(self) -> list:
+		return list(self._answers)
+
+	def add_answer(self, answer) -> None:
+		if not isinstance(answer, Answer):
+			raise ValueError("El elemento debe ser una instancia válida de Answer")
+		if answer not in self._answers:
+			self._answers.append(answer)
+
+	def accept_answer(self, answer, requester: Author) -> None:
+		if requester is not self.author:
+			raise PermissionError("Solo el autor de la pregunta puede aceptar una respuesta.")
+		if answer not in self._answers:
+			raise ValueError("La respuesta no pertenece a esta pregunta.")
+		for a in self._answers:
+			a.unmark_as_accepted()
+		answer.mark_as_accepted() 
+
 class Answer(Post):
 	_id_counter = count(1)  # compartido por todas las respuestas
 
