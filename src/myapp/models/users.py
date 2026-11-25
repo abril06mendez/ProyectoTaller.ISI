@@ -2,6 +2,10 @@ import hashlib
 import re
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from myapp.persistence.user_repository import UserRepository
 
 class UserType(Enum):
 	STUDENT = "estudiante"
@@ -66,32 +70,48 @@ class User(Author):
 		from myapp.models.post import Answer
 		return Answer(text, self, question)
 
+
 class UserManager:
-	def __init__(self):
-		self._users: dict[str, User] = {}
+    def __init__(self, user_repository=None):
+        if user_repository is None:
+            from myapp.persistence.user_repository import UserRepository
+            user_repository = UserRepository()
 
-	def register(self, name: str, email: str, password: str, role: UserType) ->User:
-		if not email or not email.strip():
-			raise ValueError("El email no puede estar vacío")
+        self._user_repository = user_repository
 
-		normalized_email = email.strip().lower()
+    def register(
+        self,
+        name: str,
+        email: str,
+        password: str,
+        role: UserType
+    ) -> User:
+        if not email or not email.strip():
+            raise ValueError("El email no puede estar vacío")
 
-		if normalized_email in self._users:
-			raise ValueError(f"El email '{normalized_email}' ya se encuentra registrado.")
+        normalized_email = email.strip().lower()
 
-		next_id = len(self._users)+1
-		new_user = User(next_id, name, normalized_email, password, role)
-		self._users[normalized_email] = new_user
-		return new_user
+        if self._user_repository.exists_by_email(normalized_email):
+            raise ValueError(
+                f"El email '{normalized_email}' ya se encuentra registrado."
+            )
 
-	def authenticate(self, email: str, password: str) -> User | None:
-		normalized_email = email.strip().lower()
-		user = self._users.get(normalized_email)
+        new_user = User(0, name, normalized_email, password, role)
 
-		if user and user.authenticate(password):
-			return user
-		return None
+        return self._user_repository.save(new_user)
 
-	@property
-	def users(self) -> list[User]:
-		return list(self._users.values())
+    def authenticate(self, email: str, password: str) -> User | None:
+        if not email or not email.strip():
+            return None
+
+        normalized_email = email.strip().lower()
+        user = self._user_repository.find_by_email(normalized_email)
+
+        if user and user.authenticate(password):
+            return user
+
+        return None
+
+    @property
+    def users(self) -> list[User]:
+        return self._user_repository.find_all()
