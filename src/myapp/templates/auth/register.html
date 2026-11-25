@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Registro{% endblock %}
+{% block content %}
+<h1>Crear cuenta</h1>
+<div class="card">
+  <form method="post">
+    <input type="text" name="name" placeholder="Nombre completo" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Contraseña (mín. 6 caracteres)" required>
+    <select name="role">
+      <option value="estudiante">Estudiante</option>
+      <option value="docente">Docente</option>
+    </select>
+    <button type="submit">Registrarme</button>
+  </form>
+</div>
+{% endblock %}
