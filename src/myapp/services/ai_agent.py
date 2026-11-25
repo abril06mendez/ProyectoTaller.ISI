@@ -5,6 +5,10 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any
 
+import anthropic
+from google import genai 
+from openai import OpenAI
+
 from myapp.models.post import Question
 from myapp.models.users import Author
 
@@ -16,6 +20,95 @@ class AIStrategy(ABC):#Interface para estrategias de IA
     @abstractmethod
     def generate_answer(self, question: Question) -> str:
         pass
+class AIModelError(Exception):
+    """Excepción para informar cuando falla el modelo de IA seleccionado"""
+    pass
+def _build_prompt(question: Question) -> str:
+    return(
+        f"Categoría: {question.category.name}\n"
+        f"Título: {question.title}\n"
+        f"Pregunta: {question.body}"
+    )
+class GeminiStrategy(AIStrategy): 
+    def __init__(self, model: str = "gemini-2.5-flash") -> None:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise AIModelError("No se pudo inicializar Geminin:falta GEMINI_API_KEY")
+        self._client = genai.Client(api_key=api_key)
+        self._model = model
+    def generate_answer(self, question: Question) -> str:
+        try:
+            response =self._client.models.generate_content(
+                model=self._model,
+                contents=_build_prompt(question),
+            )
+            if not response.text:
+                raise AIModelError("Gemini devolvió una respuesta vacía")
+            return response.text
+        except AIModelError:
+            raise
+        except Exception as e:
+            raise AIModelError(f"Error al consultar Gemini: {e}") from e
+
+class OpenAIStrategy(AIStrategy):
+    def __init__(self, model: str = "gpt-4o-mini") -> None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise AIModelError("No se pudo inicializar OpenAI:falta OPEN_API_KEY")
+        self._client = OpenAI(api_key=api_key)
+        self._model = model
+    def generate_answer(self, question: Question) -> str:
+        try:
+            response = self._client.chat.completions.create(
+                model=self._model,
+                messages=[{"role": "user", "content": _build_prompt(question)}],
+            )
+            content = response.choices[0].message.content
+            if not content:
+                raise AIModelError("OpenAi devolvió una respuesta vacía")
+            return content
+        except AIModelError:
+            raise
+        except Exception as e:
+            raise AIModelError(f"Error al consultar OpenAI: {e}") from e
+
+class ClaudeStrategy (AIStrategy):
+    def __init__(self, model:str = "claude-3-5-sonnet-latest") -> None:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise AIModelError("No se encontró la variable de entorno ANTHROPIC_API_KEY")
+        self._client = anthropic.Anthropic(api_key=api_key)
+        self._model = model
+    def generate_answer(self, question: Question) -> str:
+        try: 
+            response = self._client.messages.create(
+                model=self._model,
+                max_tokens=1024,
+                messages=[{"role": "user", "content": _build_prompt(question)}],    
+            )
+            if not response.content or not getattr(response.content[0], "text", None):
+                raise AIModelError("Claude devolvió una respuesta vacía")
+            return response.content[0].text
+        except AIModelError:
+            raise
+        except Exception as e:
+            raise AIModelError(f"Error al consultar Claude: {e}") from e
+
+AVAILABLE_STRATEGIES: dict[str, type[AIStrategy]] = {
+    "gemini": GeminiStrategy,
+    "openai": OpenAIStrategy,
+    "claude": ClaudeStrategy,
+}
+
+def create_strategy(model_name: str) -> AIStrategy:
+    """Crea la estrategia correspondiente al nombre del modelo elegido"""
+    strategy_cls = AVAILABLE_STRATEGIES.get(model_name.strip().lower())
+    if strategy_cls is None:
+        raise AIModelError(
+            f"Modelo '{model_name}' no soportado. Opciones válidas: gemini, openai, claude"
+        )
+    return strategy_cls()
+
 
 class AIAgent(Author):
     def __init__(
@@ -58,6 +151,10 @@ class AIAgent(Author):
         self._strategy = strategy
         if active_model is not None:
             self._active_model = active_model
+    def select_model(self, model_name: str) -> None:
+                new_strategy = create_strategy(model_name)
+                self.set_strategy(new_strategy, active_model=model_name.strip().lower())
+
 
     def create_answer(self, question: Question, text: str) -> Any:
         if not isinstance(question, Question):
@@ -115,3 +212,5 @@ class AIAgent(Author):
 
         logger.info(f"El agente {self.name} ha respondido a la pregunta {question.id}.")
         return answer 
+
+    
